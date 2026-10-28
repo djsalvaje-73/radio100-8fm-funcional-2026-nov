@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>LA JOYA 100.8 - Oficial</title>
+
+<!-- PWA Config -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f0f0f">
+<link rel="icon" href="la_joya_icon.png">
+<link rel="apple-touch-icon" href="la_joya_icon_192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<!-- Librerías Externas -->
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+<style>
+/* --- Animaciones Base --- */
+@keyframes gradient{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.animate-gradient{background:linear-gradient(-45deg,#0f0f0f,#2d240a,#4a3b10,#0f0f0f);background-size:400% 400%;animation:gradient 15s ease infinite}
+
+/* --- Glassmorphism --- */
+.glass{background:rgba(0,0,0,.6);backdrop-filter:blur(25px);-webkit-backdrop-filter:blur(25px);border:1px solid rgba(212,175,55,.2)}
+
+/* --- Visualizador --- */
+.visualizer-bar{width:4px;background:linear-gradient(to top,#d4af37,#fff);border-radius:4px;transition:height .08s linear;will-change:height}
+
+/* --- Texto Dorado --- */
+.gold-text{background:linear-gradient(to bottom,#f9e29f,#d4af37);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+
+/* --- Disco Giratorio --- */
+.rotating-jewel{animation:spin 25s linear infinite}@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.paused{animation-play-state:paused!important}
+
+/* --- Botones Sociales --- */
+.btn-social{width:3rem;height:3rem;border-radius:9999px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;transition:all .3s}
+.btn-social:hover{transform:scale(1.1)}.btn-social:active{transform:scale(.95)}
+
+/* --- Spinner Carga --- */
+.spinner{width:14px;height:14px;border:2px solid rgba(212,175,55,.3);border-top-color:#d4af37;border-radius:50%;animation:spin .8s linear infinite;display:inline-block;vertical-align:-2px;margin-right:6px}
+
+/* --- Sliders (Volumen/EQ) --- */
+input[type=range].sl{-webkit-appearance:none;appearance:none;height:4px;border-radius:4px;background:rgba(212,175,55,.25);outline:none;width:100%}
+input[type=range].sl::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#d4af37;cursor:pointer;box-shadow:0 0 8px rgba(212,175,55,.6)}
+input[type=range].sl::-moz-range-thumb{width:14px;height:14px;border:none;border-radius:50%;background:#d4af37;cursor:pointer}
+
+/* --- Debug Tag --- */
+.debug-tag{font-size:9px;color:#d4af37;opacity:0.7;text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
+
+/* --- Reloj Retro + Contador Oyentes --- */
+.top-info {
+  display: flex; align-items: center; gap: 12px;
+}
+#retro-clock {
+  font-family: 'Courier New', Courier, monospace; 
+  color: #d4af37;
+  text-shadow: 0 0 5px rgba(212, 175, 55, 0.6);
+  letter-spacing: 2px;
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+#listener-count {
+  font-size: 0.75rem;
+  color: #ffffffcc;
+  background: rgba(212,175,55,0.15);
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(212,175,55,0.3);
+  display: flex; align-items: center; gap: 4px;
+}
+#listener-count i { color: #ffaa00; font-size: 0.65rem; }
+
+/* ==========================================
+   HOJAS MODALES (BOTTOM SHEETS)
+   ========================================== */
+.sheet {
+  position: fixed; inset: 0; z-index: 100; display: flex; align-items: flex-end; justify-content: center;
+  pointer-events: none; visibility: hidden; transition: visibility 0s linear 0.35s;
+}
+.sheet.open { pointer-events: auto; visibility: visible; transition-delay: 0s; }
+.sheet-bg {
+  position: absolute; inset: 0; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px); opacity: 0; transition: opacity .3s ease; pointer-events: none;
+}
+.sheet.open .sheet-bg { opacity: 1; pointer-events: auto; }
+.sheet-card {
+  position: relative; width: min(440px, 100%); max-width: 100vw; max-height: 85vh; overflow-y: auto;
+  overscroll-behavior: contain; background: #0c0a06; border: 1px solid rgba(212, 175, 55, 0.25);
+  border-radius: 28px 28px 0 0; padding: 22px 20px 30px; transform: translateY(100%);
+  transition: transform .35s cubic-bezier(.2,.8,.2,1); pointer-events: auto; box-shadow: 0 -20px 60px rgba(0,0,0,.6);
+}
+.sheet.open .sheet-card { transform: translateY(0); }
+
+/* --- Switch Toggle --- */
+.switch{width:42px;height:24px;border-radius:9999px;background:rgba(255,255,255,.15);position:relative;transition:.25s;cursor:pointer;flex:none}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.25s}
+.switch.on{background:#d4af37}.switch.on::after{left:21px}
+
+/* --- Historial Items --- */
+.hist-item{display:flex;gap:10px;align-items:center;padding:8px 6px;border-bottom:1px solid rgba(255,255,255,.05)}
+.hist-item img{width:38px;height:38px;border-radius:8px;object-fit:cover;background:#222;flex:none}
+
+/* --- Estado EQ Deshabilitado --- */
+.eq-disabled{opacity:.4;pointer-events:none}
+
+/* --- CANVAS CHISPAS PREMIUM --- */
+#fire-canvas {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; z-index: 1;
+  mix-blend-mode: screen; /* Suma luces reales */
+}
+.app-container {
+  position: relative; z-index: 10;
+}
+
+/* --- MODO ZEN (FOCO) --- */
+.zen-active .topbar,
+.zen-active .socials-grid,
+.zen-active .controls-extra,
+.zen-active .credits-footer {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: scale(0.95);
+  transition: all 0.4s ease;
+}
+.zen-active #disk-outer {
+  width: 280px !important;
+  height: 280px !important;
+  box-shadow: 0 0 60px rgba(212, 175, 55, 0.3);
+}
+.zen-hint {
+  position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+  color: white; opacity: 0.5; font-size: 10px; letter-spacing: 1px;
+  pointer-events: none; animation: fadeOut 3s forwards;
+}
+@keyframes fadeOut { 0% { opacity: 0.5; } 80% { opacity: 0.5; } 100% { opacity: 0; } }
+
+/* --- Prompt Instalar App --- */
+.install-prompt {
+  position: fixed; bottom: 20px; right: 20px; z-index: 200;
+  background: rgba(12,10,6,0.98); border: 1px solid rgba(212,175,55,0.4);
+  border-radius: 16px; padding: 16px 20px; max-width: 300px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6), 0 0 20px rgba(212,175,55,0.15);
+  transform: translateY(120%); transition: transform 0.4s cubic-bezier(.2,.8,.2,1);
+}
+.install-prompt.show { transform: translateY(0); }
+.install-title {
+  color: #ffeb3b; font-weight: bold; font-size: 14px; margin-bottom: 6px;
+  text-shadow: 0 0 8px rgba(255,235,59,0.5);
+}
+.install-desc {
+  color: #ffffffdd; font-size: 12px; line-height: 1.5; margin-bottom: 12px;
+}
+.install-btn {
+  margin-top: 10px; padding: 10px 18px; border-radius: 999px;
+  background: linear-gradient(135deg, #ffd700, #ffaa00);
+  color: #0c0a06; font-weight: bold; font-size: 13px;
+  border: none; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 15px rgba(255,215,0,0.3);
+}
+.install-btn:hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(255,215,0,0.4); }
+.install-close {
+  position: absolute; top: 8px; right: 12px; background: none; border: none;
+  color: #ffeb3b; font-size: 20px; cursor: pointer; line-height: 1;
+}
+
+</style>
+</head>
+<body class="animate-gradient min-h-screen flex items-center justify-center p-4 font-sans text-white overflow-hidden">
+
+<!-- CANVAS PARA LAS CHISPAS PREMIUM -->
+<canvas id="fire-canvas"></canvas>
+
+<div class="app-container glass w-full max-w-md rounded-[3rem] p-6 pb-10 flex flex-col items-center relative shadow-2xl">
+
+  <!-- Top Bar -->
+  <div class="w-full flex justify-between items-center mb-5 px-2 topbar">
+    <div class="flex items-center gap-2 top-info">
+      <div id="live-indicator" class="w-2.5 h-2.5 bg-gray-500 rounded-full transition-colors"></div>
+      <span class="font-bold tracking-[0.2em] text-[10px] uppercase text-white/70">La Joya FM</span>
+      <div id="retro-clock">--:--</div>
+      <div id="listener-count"><i class="fas fa-fire-flame-curved"></i><span id="lc-num">—</span></div>
+    </div>
+    <div class="flex items-center gap-2 controls-extra">
+      <button id="viz-toggle" onclick="toggleVizMode()" title="Modo Visualizador" class="w-9 h-9 rounded-full glass flex items-center justify-center hover:bg-yellow-500/20 text-yellow-500/80"><i id="viz-icon" class="fas fa-wave-square text-sm"></i></button>
+      <button onclick="openSheet('settings')" title="Ajustes Sonido" class="w-9 h-9 rounded-full glass flex items-center justify-center hover:bg-yellow-500/20 text-yellow-500/80"><i class="fas fa-sliders text-sm"></i></button>
+      <button onclick="shareApp()" title="Compartir App" class="w-9 h-9 rounded-full glass flex items-center justify-center hover:bg-yellow-500/20"><i class="fas fa-share-nodes text-yellow-500 text-sm"></i></button>
+    </div>
+  </div>
+
+  <!-- Disco Principal -->
+  <div class="relative mb-5">
+    <div id="disk-outer" class="w-60 h-60 sm:w-64 sm:h-64 rounded-full glass p-1 flex items-center justify-center rotating-jewel paused shadow-2xl border border-yellow-500/30 cursor-pointer select-none">
+      <div class="w-full h-full rounded-full relative overflow-hidden flex items-center justify-center"
+           style="background-image:url('la_joya_icon.png'); background-size:cover; background-position:center;">
+        <div class="absolute inset-0 bg-black/55"></div>
+        <div class="absolute inset-0 bg-gradient-to-br from-[#1a1408] via-transparent to-[#2d240a] -z-10"></div>
+        <div class="z-10 text-center">
+          <h1 class="text-4xl font-black gold-text drop-shadow-2xl">LA JOYA</h1>
+          <p class="text-lg font-bold tracking-[0.3em] text-white/90">100.8</p>
+        </div>
+      </div>
+    </div>
+    <div id="pulse" class="absolute inset-0 bg-yellow-500/20 rounded-full blur-2xl -z-10 opacity-0 transition-opacity duration-1000"></div>
+    <div id="zen-hint" class="zen-hint hidden">Doble toque = Modo Foco</div>
+  </div>
+
+  <!-- Status & Visualizer -->
+  <div class="text-center mb-3 w-full">
+    <p id="status-text" class="text-yellow-500/80 text-xs font-bold uppercase tracking-widest mb-2" aria-live="polite">Listo para brillar</p>
+    <div id="visualizer" class="flex items-end justify-center gap-1.5 h-10 opacity-0 transition-opacity duration-500"></div>
+  </div>
+
+  <!-- Ahora Suena + Carátula -->
+  <div class="w-full flex items-center gap-3 mb-4 px-1">
+    <img id="np-cover" src="la_joya_icon_192.png" alt="" class="w-12 h-12 rounded-xl object-cover bg-black/40 border border-yellow-500/20 flex-none">
+    <div class="min-w-0 flex-1 text-left">
+      <p class="text-[9px] uppercase tracking-[0.3em] text-white/35 mb-0.5"><i class="fas fa-music text-yellow-500/50 mr-1"></i>Ahora suena</p>
+      <p id="np-text" class="text-sm font-semibold text-white/90 truncate">—</p>
+      <p id="np-artist" class="text-[11px] text-white/45 truncate"></p>
+      <p id="np-debug" class="debug-tag"></p>
+    </div>
+    <button onclick="shareTrack()" title="Pedir Canción / Compartir" class="w-9 h-9 rounded-full glass flex items-center justify-center text-green-400/90 hover:bg-green-500/20 flex-none"><i class="fab fa-whatsapp text-base"></i></button>
+    <button onclick="openSheet('history')" title="Historial" class="w-9 h-9 rounded-full glass flex items-center justify-center text-yellow-500/70 hover:bg-yellow-500/20 flex-none"><i class="fas fa-clock-rotate-left text-sm"></i></button>
+  </div>
+
+  <!-- Control Play/Pausa -->
+  <div class="mb-5">
+    <button id="play-btn" onclick="togglePlay()" class="w-24 h-24 rounded-full bg-gradient-to-br from-yellow-300 via-yellow-600 to-yellow-700 text-black flex items-center justify-center text-4xl shadow-[0_10px_40px_rgba(212,175,55,0.4)] hover:scale-105 active:scale-95 transition-all"><i id="play-icon" class="fas fa-play ml-1"></i></button>
+  </div>
+
+  <!-- Volumen -->
+  <div class="w-full flex items-center gap-3 mb-5 px-2 opacity-80 controls-extra">
+    <i class="fas fa-volume-low text-yellow-500/70 text-xs w-4 text-center"></i>
+    <input id="volume" class="sl flex-1" type="range" min="0" max="1" step="0.01" value="1" aria-label="Volumen">
+    <i class="fas fa-volume-high text-yellow-500/70 text-xs w-4 text-center"></i>
+  </div>
+
+  <!-- Redes Sociales -->
+  <div class="w-full grid grid-cols-3 gap-4 mb-5 socials-grid">
+    <a href="#" id="wa-link-main" target="_blank" rel="noopener" class="flex flex-col items-center gap-2 group"><div class="btn-social glass text-green-500 group-hover:bg-green-500/20"><i class="fab fa-whatsapp"></i></div><span class="text-[10px] uppercase tracking-tighter text-white/40">WhatsApp</span></a>
+    <a href="https://www.facebook.com/share/17dbBQS69N/" target="_blank" rel="noopener" class="flex flex-col items-center gap-2 group"><div class="btn-social glass text-blue-500 group-hover:bg-blue-500/20"><i class="fab fa-facebook-f"></i></div><span class="text-[10px] uppercase tracking-tighter text-white/40">Facebook</span></a>
+    <a href="https://djsalvaje.blogspot.com/?m=1" target="_blank" rel="noopener" class="flex flex-col items-center gap-2 group"><div class="btn-social glass text-yellow-500 group-hover:bg-yellow-500/20"><i class="fas fa-globe"></i></div><span class="text-[10px] uppercase tracking-tighter text-white/40">Web</span></a>
+  </div>
+
+  <div class="text-center credits-footer"><p class="text-[9px] text-white/20 uppercase tracking-[0.4em]">Dj Salvaje Presenta</p></div>
+  
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-10 bg-white text-black px-6 py-2 rounded-full text-sm font-bold shadow-2xl transform translate-y-32 opacity-0 transition-all duration-500 z-[70]">Enlace copiado</div>
+</div>
+
+<!-- ================= HOJA AJUSTES ================= -->
+<div id="sheet-settings" class="sheet">
+  <div class="sheet-bg" onclick="closeSheets()"></div>
+  <div class="sheet-card">
+    <h3 class="text-yellow-500 font-bold tracking-widest text-xs uppercase mb-4"><i class="fas fa-sliders mr-2"></i>Ajustes de sonido</h3>
+    
+    <div class="flex items-center justify-between mb-4">
+      <span class="text-white/70 text-sm">Modo visualizador</span>
+      <button id="viz-mode-btn" onclick="toggleVizMode()" class="text-xs px-3 py-1 rounded-full glass text-yellow-500">REAL</button>
+    </div>
+
+    <div class="flex items-center justify-between mb-5">
+      <div><p class="text-white/70 text-sm">Ahorro de datos</p><p class="text-white/35 text-[10px]">Pausa en 2.º plano + menos sondeo</p></div>
+      <div id="ds-switch" class="switch" onclick="toggleDataSave()"></div>
+    </div>
+
+    <div id="eq-wrap">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-white/70 text-sm">Ecualizador</span>
+        <select id="eq-preset" onchange="applyPreset(this.value)" class="bg-black/50 text-yellow-500 text-xs rounded-lg px-2 py-1 border border-yellow-500/20 outline-none">
+          <option value="flat">Plano</option><option value="bass">Graves +</option><option value="vocal">Vocal</option><option value="radio">Radio</option><option value="night">Noche</option>
+        </select>
+      </div>
+      <div id="eq-sliders" class="space-y-3">
+        <label class="block"><span class="text-[10px] uppercase tracking-widest text-white/40">Graves</span><input id="eq-low" class="sl mt-1" type="range" min="-12" max="12" step="1" value="0"></label>
+        <label class="block"><span class="text-[10px] uppercase tracking-widest text-white/40">Medios</span><input id="eq-mid" class="sl mt-1" type="range" min="-12" max="12" step="1" value="0"></label>
+        <label class="block"><span class="text-[10px] uppercase tracking-widest text-white/40">Agudos</span><input id="eq-high" class="sl mt-1" type="range" min="-12" max="12" step="1" value="0"></label>
+      </div>
+      <p id="eq-note" class="text-[10px] text-white/30 mt-3 hidden">El EQ necesita el grafo de audio (CORS del worker).</p>
+    </div>
+
+    <button onclick="closeSheets()" class="mt-6 w-full py-3 rounded-2xl bg-yellow-500/15 text-yellow-500 text-sm font-bold hover:bg-yellow-500/25 transition-colors">Cerrar</button>
+  </div>
+</div>
+
+<!-- ================= HOJA HISTORIAL ================= -->
+<div id="sheet-history" class="sheet">
+  <div class="sheet-bg" onclick="closeSheets()"></div>
+  <div class="sheet-card">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-yellow-500 font-bold tracking-widest text-xs uppercase"><i class="fas fa-clock-rotate-left mr-2"></i>Historial</h3>
+      <button onclick="clearHistory()" class="text-[10px] text-white/40 uppercase tracking-widest hover:text-red-400 transition-colors"><i class="fas fa-trash mr-1"></i>Limpiar</button>
+    </div>
+    <div id="history-list" class="space-y-1"></div>
+    <p id="history-empty" class="text-white/30 text-xs text-center py-6">Aún no hay temas registrados.</p>
+    <button onclick="closeSheets()" class="mt-5 w-full py-3 rounded-2xl bg-yellow-500/15 text-yellow-500 text-sm font-bold hover:bg-yellow-500/25 transition-colors">Cerrar</button>
+  </div>
+</div>
+
+<!-- ================= PROMPT INSTALAR APP ================= -->
+<div id="install-prompt" class="install-prompt">
+  <button class="install-close" onclick="dismissInstallPrompt()">×</button>
+  <div class="install-title">✨ ¿Te gusta La Joya?</div>
+  <div class="install-desc">Instálala como app para acceso rápido y escuchar sin abrir navegador.</div>
+  <button id="install-btn" class="install-btn" onclick="triggerInstall()">Instalar App</button>
+</div>
+
+<!-- Elemento Audio Invisible -->
+<audio id="radio-stream" preload="none" playsinline></audio>
+
+<script>
+/* ========================================================
+   ⚙️ CONFIGURACIÓN
+   ======================================================== */
+const WORKER_BASE     = "https://lajoya-radio.TU-USUARIO.workers.dev"; // <<< CAMBIA POR TU URL REAL
+const STREAM_INSECURE = "http://uk18freenew.listen2myradio.com:38247/stream"; 
+const STATION_NAME    = "LA JOYA 100.8";
+const NP_FALLBACK     = "Transmisión en vivo";   
+const MY_PHONE_NUMBER = "2831021386"; 
+const SOCIAL_HASHTAGS = "#LaJoya1008 #DJSalvaje"; 
+
+const CONFIG = {
+  VISUALIZER_MODE: "auto",      
+  NOW_PLAYING: true,            
+  NP_INTERVAL_MS: 18000,        
+  NP_INTERVAL_DS: 60000,        
+  RECONNECT_MAX_MS: 15000,
+  SHOW_INSTALL_PROMPT_AFTER_S: 25,
+  LISTENER_API_URL: "", 
+  FIRE_PARTICLE_COUNT: 120, // Aumentamos densidad para premium look
+  TRAIL_LENGTH: 0.15 // Qué tan largo es el rastro de luz (menor = más largo)
+};
+/* ======================================================== */
+
+// Referencias DOM
+const $ = id => document.getElementById(id);
+const audio=$('radio-stream'), playIcon=$('play-icon'), disk=$('disk-outer'), visualizer=$('visualizer'),
+      statusText=$('status-text'), liveIndicator=$('live-indicator'), pulse=$('pulse'),
+      npText=$('np-text'), npArtist=$('np-artist'), npCover=$('np-cover'), npDebug=$('np-debug'),
+      volSlider=$('volume'), vizIcon=$('viz-icon'), vizModeBtn=$('viz-mode-btn'), dsSwitch=$('ds-switch'),
+      eqWrap=$('eq-wrap'), eqNote=$('eq-note'), eqLow=$('eq-low'), eqMid=$('eq-mid'), eqHigh=$('eq-high'), eqPreset=$('eq-preset');
+const lcNum = $('lc-num'); 
+
+const SILENCE="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=";
+const BAR_COUNT=15;
+for(let i=0;i<BAR_COUNT;i++){const b=document.createElement('div');b.className='visualizer-bar';b.style.height='12%';visualizer.appendChild(b);}
+const bars=Array.from(document.querySelectorAll('.visualizer-bar'));
+
+let userWantsPlay=false, useCors=true, vizMode=CONFIG.VISUALIZER_MODE, graphOK=false;
+let ctx=null, analyser=null, srcNode=null, freqData=null, eqNodes=null;
+let rafId=null, reconnectTimer=null, reconnectDelay=1000, playToken=0, npTimer=null;
+let deadFrames=0, dataSave=localStorage.getItem('lajoya_ds')==='1';
+let history=JSON.parse(localStorage.getItem('lajoya_hist')||'[]');
+let lastTitle='', coverSearchLock=false;
+let zenActive = false;
+let deferredPrompt = null;
+let listenerEstimate = Math.floor(Math.random()*5)+1; 
+let listenerTimer = null;
+
+/* ---------- SONIDO UI PREMIUM ---------- */
+let uiAudioCtx = null;
+function getUiAudioCtx(){
+  if(!uiAudioCtx){ try{ const AC=window.AudioContext||window.webkitAudioContext; uiAudioCtx=new AC(); }catch(e){return null;} }
+  return uiAudioCtx;
+}
+function playUiClick(type='tap'){
+  const c=getUiAudioCtx(); if(!c||c.state==='closed') return;
+  if(c.state==='suspended') c.resume().catch(()=>{});
+  const osc=c.createOscillator(), gain=c.createGain();
+  osc.connect(gain); gain.connect(c.destination);
+  if(type==='zen-on'){osc.frequency.setValueAtTime(880,c.currentTime);gain.gain.setValueAtTime(0.08,c.currentTime);gain.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.12);}
+  else if(type==='zen-off'){osc.frequency.setValueAtTime(440,c.currentTime);gain.gain.setValueAtTime(0.06,c.currentTime);gain.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.1);}
+  else if(type==='viz-real'){osc.frequency.setValueAtTime(1200,c.currentTime);gain.gain.setValueAtTime(0.05,c.currentTime);gain.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.08);}
+  else if(type==='viz-deco'){osc.frequency.setValueAtTime(600,c.currentTime);gain.gain.setValueAtTime(0.04,c.currentTime);gain.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.08);}
+  else{osc.frequency.setValueAtTime(1000,c.currentTime);gain.gain.setValueAtTime(0.03,c.currentTime);gain.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.05);}
+  osc.start(); osc.stop(c.currentTime+0.15);
+}
+
+/* ---------- SISTEMA DE PARTÍCULAS PREMIUM (FIRE ENGINE V2) ---------- */
+const canvas = $('fire-canvas');
+const cctx = canvas.getContext('2d', { alpha: true });
+let particles = [];
+let animFireId = null;
+let lastFrameTime = 0;
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// Tipos de partícula para variedad visual
+const TYPE_EMBER = 0; // Brasas lentas, rojas/oscuras, abajo
+const TYPE_SPARK = 1; // Chispas rápidas, amarillas/blancas, centro/arriba
+const TYPE_ASH   = 2; // Ceniza fina, blanca/azulada, dispersa
+
+class FireParticle {
+  constructor(type) {
+    this.type = type;
+    this.reset(true);
+  }
+
+  reset(initial = false) {
+    const w = canvas.width;
+    const h = canvas.height;
+
+    if (this.type === TYPE_EMBER) {
+      // Origen: Zona baja central (hoguera base)
+      this.x = w * 0.5 + (Math.random() - 0.5) * (w * 0.4);
+      this.y = initial ? h * 0.8 + Math.random() * h * 0.2 : h + 10;
+      this.vx = (Math.random() - 0.5) * 0.5; // Deriva mínima
+      this.vy = -(Math.random() * 0.8 + 0.2); // Ascenso lento
+      this.size = Math.random() * 3 + 2; // Grandes
+      this.life = 1.0;
+      this.decay = Math.random() * 0.005 + 0.002; // Vida larga
+      this.hue = Math.random() > 0.5 ? 10 : 25; // Rojo oscuro o Naranja quemado
+      this.saturation = 100;
+      this.lightness = 40; // Oscuro
+      
+    } else if (this.type === TYPE_SPARK) {
+      // Origen: Centro de la hoguera (más arriba que embers)
+      this.x = w * 0.5 + (Math.random() - 0.5) * (w * 0.3);
+      this.y = initial ? h * 0.6 + Math.random() * h * 0.3 : h * 0.7 + Math.random() * 100;
+      this.vx = (Math.random() - 0.5) * 3; // Dispersión lateral fuerte
+      this.vy = -(Math.random() * 4 + 2); // Impulso vertical fuerte
+      this.size = Math.random() * 1.5 + 0.5; // Pequeñas pero intensas
+      this.life = 1.0;
+      this.decay = Math.random() * 0.02 + 0.01; // Vida corta
+      this.hue = Math.random() > 0.3 ? 45 : 30; // Amarillo oro o naranja fuego
+      this.saturation = 100;
+      this.lightness = 60; // Brillante
+      
+    } else if (this.type === TYPE_ASH) {
+      // Origen: Difuso en toda la zona media-alta
+      this.x = Math.random() * w;
+      this.y = initial ? Math.random() * h : h * 0.4 + Math.random() * h * 0.4;
+      this.vx = (Math.random() - 0.5) * 0.2; // Casi estáticas
+      this.vy = -(Math.random() * 0.3 + 0.1); // Flotación suave
+      this.size = Math.random() * 0.8 + 0.2; // Microscópicas
+      this.life = 1.0;
+      this.decay = Math.random() * 0.003 + 0.001; // Muy larga vida
+      this.hue = 200; // Azul/cian frío (contraste con fuego)
+      this.saturation = 20; // Grisáceo
+      this.lightness = 80; // Blanco brillante
+    }
+
+    // Propiedades físicas comunes
+    this.gravity = this.type === TYPE_SPARK ? 0.05 : (this.type === TYPE_EMBER ? 0.01 : 0);
+    this.drag = 0.98; // Resistencia del aire
+    this.trailPoints = []; // Para dibujar estelas
+    this.maxTrail = this.type === TYPE_SPARK ? 5 : (this.type === TYPE_EMBER ? 2 : 0);
+  }
+
+  update(dt) {
+    // Física
+    this.vy += this.gravity;
+    this.vx *= this.drag;
+    this.vy *= this.drag;
+    
+    // Turbulencia aleatoria sutil (viento/calor)
+    this.vx += (Math.random() - 0.5) * 0.1;
+    this.vy += (Math.random() - 0.5) * 0.05;
+
+    this.x += this.vx;
+    this.y += this.vy;
+
+    // Actualizar estela (solo para sparks y embers)
+    if (this.maxTrail > 0) {
+      this.trailPoints.unshift({ x: this.x, y: this.y });
+      if (this.trailPoints.length > this.maxTrail) {
+        this.trailPoints.pop();
+      }
+    }
+
+    // Envejecimiento
+    this.life -= this.decay;
+
+    // Reinicio si muere o sale de pantalla
+    if (this.life <= 0 || this.y < -50 || this.x < -50 || this.x > canvas.width + 50) {
+      this.reset();
+    }
+  }
+
+  draw(ctx) {
+    if (this.life <= 0) return;
+
+    const alpha = Math.pow(this.life, 1.5); // Fade out suave (no lineal)
+    
+    ctx.save();
+    
+    // Configuración de brillo/glow
+    // Usamos shadowBlur para simular emisión de luz real
+    ctx.shadowBlur = this.type === TYPE_SPARK ? 10 * alpha : (this.type === TYPE_EMBER ? 5 * alpha : 2 * alpha);
+    ctx.shadowColor = `hsla(${this.hue}, ${this.saturation}%, ${this.lightness}%, ${alpha})`;
+    
+    // Dibujar Estela (si existe)
+    if (this.trailPoints.length > 1) {
+      ctx.beginPath();
+      ctx.moveTo(this.trailPoints[0].x, this.trailPoints[0].y);
+      for (let i = 1; i < this.trailPoints.length; i++) {
+        ctx.lineTo(this.trailPoints[i].x, this.trailPoints[i].y);
+      }
+      ctx.strokeStyle = `hsla(${this.hue}, ${this.saturation}%, ${this.lightness}%, ${alpha * 0.5})`;
+      ctx.lineWidth = this.size * 0.5;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    }
+
+    // Dibujar Núcleo
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    
+    // Degradado radial para núcleo brillante -> borde difuso
+    const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
+    grad.addColorStop(0, `hsla(${this.hue}, ${this.saturation}%, ${Math.min(100, this.lightness + 20)}%, ${alpha})`); // Centro más blanco
+    grad.addColorStop(0.6, `hsla(${this.hue}, ${this.saturation}%, ${this.lightness}%, ${alpha})`);
+    grad.addColorStop(1, `hsla(${this.hue}, ${this.saturation}%, ${this.lightness - 10}%, 0)`); // Borde transparente
+    
+    ctx.fillStyle = grad;
+    ctx.fill();
+    
+    ctx.restore();
+  }
+}
+
+function initFireSystem() {
+  particles = [];
+  const total = CONFIG.FIRE_PARTICLE_COUNT;
+  
+  // Distribución: 20% Embers, 50% Sparks, 30% Ash
+  const numEmbers = Math.floor(total * 0.2);
+  const numSparks = Math.floor(total * 0.5);
+  const numAsh = total - numEmbers - numSparks;
+
+  for (let i = 0; i < numEmbers; i++) particles.push(new FireParticle(TYPE_EMBER));
+  for (let i = 0; i < numSparks; i++) particles.push(new FireParticle(TYPE_SPARK));
+  for (let i = 0; i < numAsh; i++) particles.push(new FireParticle(TYPE_ASH));
+}
+
+function animateFire(timestamp) {
+  const dt = timestamp - lastFrameTime;
+  lastFrameTime = timestamp;
+
+  // Limpiar con transparencia parcial para Motion Blur natural
+  // Esto hace que las estelas persistan unos frames antes de desaparecer
+  cctx.globalCompositeOperation = 'destination-out';
+  cctx.fillStyle = `rgba(0, 0, 0, ${CONFIG.TRAIL_LENGTH})`; 
+  cctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  // Cambiar a modo suma para que los brillos se acumulen (efecto luz real)
+  cctx.globalCompositeOperation = 'lighter';
+
+  particles.forEach(p => {
+    p.update(dt);
+    p.draw(cctx);
+  });
+
+  animFireId = requestAnimationFrame(animateFire);
+}
+
+initFireSystem();
+animFireId = requestAnimationFrame(animateFire);
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) cancelAnimationFrame(animFireId);
+  else { lastFrameTime = performance.now(); animFireId = requestAnimationFrame(animateFire); }
+});
+
+/* ---------- CONTADOR DE OYENTES ---------- */
+async function fetchListeners() {
+  if (CONFIG.LISTENER_API_URL && !CONFIG.LISTENER_API_URL.includes('pon-aqui')) {
+    try {
+      const r = await fetch(CONFIG.LISTENER_API_URL, {cache:'no-store'});
+      const j = await r.json();
+      if (j.listeners !== undefined) {
+        listenerEstimate = parseInt(j.listeners, 10) || 0;
+        updateListenerDisplay();
+        return;
+      }
+    } catch(e) {}
+  }
+  
+  if (userWantsPlay && !audio.paused) {
+    if (Math.random() > 0.6) {
+      listenerEstimate += Math.random() > 0.5 ? 1 : -1;
+      if (listenerEstimate < 1) listenerEstimate = 1;
+      if (listenerEstimate > 100) listenerEstimate = 100; 
+    }
+  } else {
+    if (listenerEstimate > 1 && Math.random() > 0.9) listenerEstimate--;
+  }
+  updateListenerDisplay();
+}
+function updateListenerDisplay() {
+  lcNum.textContent = listenerEstimate === 0 ? '0' : listenerEstimate.toString();
+}
+listenerTimer = setInterval(fetchListeners, 3000); 
+fetchListeners(); 
+
+/* ---------- RELOJ RETRO ---------- */
+function updateClock() {
+  const now = new Date();
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const clockEl = $('retro-clock');
+  if(clockEl) clockEl.textContent = `${hours}:${minutes}`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+/* ---------- MODO ZEN ---------- */
+let lastTapTime = 0;
+disk.addEventListener('touchend', handleDiskTap);
+disk.addEventListener('dblclick', toggleZenMode);
+
+function handleDiskTap(e) {
+  e.preventDefault();
+  const currentTime = new Date().getTime();
+  const tapLength = currentTime - lastTapTime;
+  if (tapLength < 300 && tapLength > 0) {
+    toggleZenMode();
+  }
+  lastTapTime = currentTime;
+}
+
+function toggleZenMode() {
+  zenActive = !zenActive;
+  const container = document.querySelector('.app-container');
+  const hint = $('zen-hint');
+  
+  if (zenActive) {
+    container.classList.add('zen-active');
+    hint.classList.remove('hidden');
+    setTimeout(() => hint.classList.add('hidden'), 3000);
+    playUiClick('zen-on');
+  } else {
+    container.classList.remove('zen-active');
+    playUiClick('zen-off');
+  }
+}
+
+/* ---------- UI Helpers ---------- */
+function setStatus(t,spin){statusText.innerHTML=(spin?'<span class="spinner"></span>':'')+t;}
+function showPlayingUI(){playIcon.className='fas fa-pause';disk.classList.remove('paused');visualizer.style.opacity='1';pulse.style.opacity='1';liveIndicator.classList.replace('bg-gray-500','bg-red-600');liveIndicator.classList.add('animate-pulse');setStatus('Al Aire · En Vivo',false);}
+function showStoppedUI(m){playIcon.className='fas fa-play ml-1';disk.classList.add('paused');visualizer.style.opacity='0';pulse.style.opacity='0';liveIndicator.classList.replace('bg-red-600','bg-gray-500');liveIndicator.classList.remove('animate-pulse');stopLoop();setStatus(m,false);}
+
+/* ---------- Fuentes de Stream ---------- */
+function computeSources(){
+  const l=[];
+  if(WORKER_BASE&&!WORKER_BASE.includes('TU-USUARIO'))l.push(WORKER_BASE.replace(/\/$/,'')+'/stream');
+  if(location.protocol!=='https:'&&STREAM_INSECURE)l.push(STREAM_INSECURE);
+  return l;
+}
+
+/* ---------- Grafo Web Audio (EQ + Analyser) ---------- */
+function buildGraph(){
+  if(graphOK)return true;
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext; if(!AC)return false;
+    ctx=new AC();
+    srcNode=ctx.createMediaElementSource(audio);
+    const low=ctx.createBiquadFilter(); low.type='lowshelf'; low.frequency.value=120;
+    const mid=ctx.createBiquadFilter(); mid.type='peaking';  mid.frequency.value=1000; mid.Q.value=1;
+    const high=ctx.createBiquadFilter();high.type='highshelf';high.frequency.value=6000;
+    analyser=ctx.createAnalyser(); analyser.fftSize=256; analyser.smoothingTimeConstant=0.82;
+    freqData=new Uint8Array(analyser.frequencyBinCount);
+    srcNode.connect(low); low.connect(mid); mid.connect(high); high.connect(analyser); analyser.connect(ctx.destination);
+    eqNodes={low,mid,high};
+    graphOK=true; applyEqFromUI();
+    return true;
+  }catch(e){console.warn('[audio] grafo no disponible',e);graphOK=false;return false;}
+}
+function resumeCtx(){if(ctx&&ctx.state==='suspended')ctx.resume().catch(()=>{});}
+function eqAvailable(){return graphOK&&!!eqNodes;}
+function refreshEqUI(){
+  if(eqAvailable()){eqWrap.classList.remove('eq-disabled');eqNote.classList.add('hidden');}
+  else{eqWrap.classList.add('eq-disabled');eqNote.classList.remove('hidden');}
+}
+function applyEqFromUI(){if(!eqAvailable())return;eqNodes.low.gain.value=+eqLow.value;eqNodes.mid.gain.value=+eqMid.value;eqNodes.high.gain.value=+eqHigh.value;localStorage.setItem('lajoya_eq',JSON.stringify({l:eqLow.value,m:eqMid.value,h:eqHigh.value,p:eqPreset.value}));}
+const PRESETS={flat:[0,0,0],bass:[7,1,-1],vocal:[-3,5,-1],radio:[4,2,3],night:[5,-2,4]};
+function applyPreset(k){const p=PRESETS[k]||PRESETS.flat;eqLow.value=p[0];eqMid.value=p[1];eqHigh.value=p[2];applyEqFromUI();}
+[eqLow,eqMid,eqHigh].forEach(s=>s.addEventListener('input',()=>{eqPreset.value='user';applyEqFromUI();}));
+(function loadEq(){const s=JSON.parse(localStorage.getItem('lajoya_eq')||'null');if(s){eqLow.value=s.l;eqMid.value=s.m;eqHigh.value=s.h;eqPreset.value=s.p||'user';}})();
+
+/* ---------- Visualizador Loop ---------- */
+function paintReal(){analyser.getByteFrequencyData(freqData);let sum=0;const n=freqData.length;for(let i=0;i<BAR_COUNT;i++){const st=Math.floor(Math.pow(i/BAR_COUNT,1.7)*n),en=Math.max(st+1,Math.floor(Math.pow((i+1)/BAR_COUNT,1.7)*n));let a=0;for(let j=st;j<en;j++){a+=freqData[j];sum+=freqData[j];}bars[i].style.height=(12+(a/(en-st)/255)*88).toFixed(1)+'%';}
+  if(sum===0){deadFrames++;if(deadFrames>90&&vizMode==='real'){vizMode='decorativo';applyVizIcon();}}else deadFrames=0;}
+function paintDeco(){for(let i=0;i<BAR_COUNT;i++)bars[i].style.height=(Math.random()*80+15).toFixed(1)+'%';}
+function loop(){if(!userWantsPlay||audio.paused){rafId=null;return;}if(vizMode==='real'&&eqAvailable())paintReal();else paintDeco();rafId=requestAnimationFrame(loop);}
+function startLoop(){if(!rafId)rafId=requestAnimationFrame(loop);}
+function stopLoop(){if(rafId)cancelAnimationFrame(rafId);rafId=null;}
+function applyVizIcon(){vizIcon.className=(vizMode==='real'?'fas fa-wave-square':'fas fa-bars-staggered')+' text-sm';vizModeBtn.textContent=vizMode==='real'?'REAL':'DECO';}
+function toggleVizMode(){
+  if(vizMode==='real'){vizMode='decorativo';playUiClick('viz-deco');}
+  else{
+    if(!graphOK&&!buildGraph()){showToast('Navegador sin análisis de audio');vizMode='decorativo';playUiClick('viz-deco');}
+    else{vizMode='real';playUiClick('viz-real');}
+  }
+  applyVizIcon();refreshEqUI();localStorage.setItem('lajoya_viz',vizMode);
+}
+
+/* ---------- Motor Reproducción ---------- */
+function trySource(list,idx){
+  if(!userWantsPlay)return;const token=++playToken;
+  if(idx>=list.length){showStoppedUI('Servidor Offline');showToast('Sin señal');scheduleReconnect(list);return;}
+  setStatus('Buscando señal...',true);
+  const url=list[idx];
+  if(useCors)audio.setAttribute('crossorigin','anonymous');else audio.removeAttribute('crossorigin');
+  audio.src=url;audio.load();
+  if(useCors&&!graphOK)buildGraph(); 
+  refreshEqUI();
+  const p=audio.play();if(p&&p.catch)p.catch(()=>{});
+  clearTimeout(reconnectTimer);
+  reconnectTimer=setTimeout(()=>{if(token===playToken&&audio.paused){if(useCors){useCors=false;vizMode='decorativo';applyVizIcon();refreshEqUI();trySource(list,idx);}else trySource(list,idx+1);}},9000);
+}
+function scheduleReconnect(list){if(!userWantsPlay)return;reconnectDelay=Math.min(reconnectDelay*2,CONFIG.RECONNECT_MAX_MS);clearTimeout(reconnectTimer);reconnectTimer=setTimeout(()=>{reconnectDelay=1000;useCors=true;trySource(list,0);},reconnectDelay);}
+audio.addEventListener('playing',()=>{if(!userWantsPlay)return;clearTimeout(reconnectTimer);reconnectDelay=1000;resumeCtx();showPlayingUI();startLoop();startNP();});
+audio.addEventListener('waiting',()=>{if(userWantsPlay)setStatus('Buffering...',true);});
+audio.addEventListener('error',()=>{if(!userWantsPlay)return;clearTimeout(reconnectTimer);const l=computeSources();if(useCors){useCors=false;vizMode='decorativo';applyVizIcon();refreshEqUI();trySource(l,0);}else scheduleReconnect(l);});
+audio.addEventListener('stalled',()=>{if(userWantsPlay)setStatus('Señal interrumpida...',true);});
+audio.addEventListener('ended',()=>{if(userWantsPlay)scheduleReconnect(computeSources());});
+
+function togglePlay(){
+  if(userWantsPlay&&!audio.paused){userWantsPlay=false;audio.pause();audio.removeAttribute('src');audio.load();stopNP();showStoppedUI('Pausado');localStorage.setItem('lajoya_wanted','0');updateMS(false);return;}
+  unlockIOS();const list=computeSources();
+  if(!list.length){setStatus('CONFIGURA EL WORKER HTTPS');showToast('Falta WORKER_BASE');return;}
+  useCors=true;
+  const sv=localStorage.getItem('lajoya_viz');
+  vizMode=(CONFIG.VISUALIZER_MODE==='decorativo'||sv==='decorativo')?'decorativo':'real';
+  applyVizIcon();userWantsPlay=true;localStorage.setItem('lajoya_wanted','1');trySource(list,0);updateMS(true);
+}
+function unlockIOS(){try{const s=new Audio(SILENCE);const pr=s.play();if(pr)pr.then(()=>s.pause()).catch(()=>{});}catch(_){}}
+
+/* ---------- Volumen ---------- */
+volSlider.addEventListener('input',()=>{audio.volume=parseFloat(volSlider.value);});
+volSlider.addEventListener('change',()=>localStorage.setItem('lajoya_vol',volSlider.value));
+(function iv(){const v=parseFloat(localStorage.getItem('lajoya_vol'));if(!isNaN(v)){audio.volume=v;volSlider.value=v;}else audio.volume=1;})();
+
+/* ---------- AHORA SUENA + CARÁTULA ---------- */
+function startNP(){stopNP();fetchNP();npTimer=setInterval(fetchNP,dataSave?CONFIG.NP_INTERVAL_DS:CONFIG.NP_INTERVAL_MS);}
+function stopNP(){if(npTimer)clearInterval(npTimer);npTimer=null;}
+
+function cleanTitle(raw) {
+  if (!raw) return "";
+  let t = raw.trim();
+  t = t.replace(/^(now\s*playing[:\-\s]*)|^(on\s*air[:\-\s]*)|^(live[:\-\s]*)|^(transmitiendo[:\-\s]*)/gi, "");
+  t = t.replace(/\s*[|\-–]\s*(la joya|100\.8|dj salvaje|fm)$/gi, "");
+  t = t.replace(/\s+/g, " ").trim();
+  return t;
+}
+
+async function fetchNP() {
+  if(!CONFIG.NOW_PLAYING||!WORKER_BASE||WORKER_BASE.includes('TU-USUARIO')){setNP(NP_FALLBACK,'',null);return;}
+  
+  npDebug.textContent = "Consultando...";
+  try{
+    const r=await fetch(WORKER_BASE.replace(/\/$/,'')+'/nowplaying',{cache:'no-store'});
+    const j=await r.json();
+    
+    if(j && j.title){
+      const clean = cleanTitle(j.title);
+      setNP(clean, '', null);
+      searchCoverRobust(clean);
+      updateWhatsAppLink(clean);
+    } else {
+      setNP(NP_FALLBACK, j.station || '', null);
+      npDebug.textContent = "Sin metadatos DJ";
+      updateWhatsAppLink(null);
+    }
+  }catch(_){
+    setNP(NP_FALLBACK,'',null);
+    npDebug.textContent = "Error Worker";
+    updateWhatsAppLink(null);
+  }
+}
+
+function setNP(title, artist, coverUrl){
+  npText.textContent=title||'—';
+  npArtist.textContent=artist||'';
+  if(coverUrl) npCover.src=coverUrl;
+  
+  if(title && title !== lastTitle && title !== NP_FALLBACK){
+    lastTitle=title;
+    pushHistory(title, artist, coverUrl);
+  }
+}
+
+async function searchCoverRobust(query) {
+  if (coverSearchLock) return;
+  coverSearchLock = true;
+  npDebug.textContent = "Buscando arte...";
+  
+  let found = false;
+
+  try {
+    const itunesRes = await queryItunes(query);
+    if (itunesRes && itunesRes.cover) {
+      applyCover(itunesRes.cover, itunesRes.artist, itunesRes.album);
+      npDebug.textContent = "iTunes ✓";
+      found = true;
+    }
+  } catch (e) { console.warn("iTunes fail", e); }
+
+  if (!found && query.includes('-')) {
+    const parts = query.split('-').map(s => s.trim());
+    if (parts.length >= 2) {
+      const songOnly = parts.slice(1).join('-'); 
+      try {
+        const res2 = await queryItunes(songOnly);
+        if (res2 && res2.cover) {
+          applyCover(res2.cover, res2.artist, res2.album);
+          npDebug.textContent = "iTunes (retry) ✓";
+          found = true;
+        }
+      } catch (e) {}
+    }
+  }
+
+  if (!found) {
+    npDebug.textContent = "No encontrado";
+  }
+  
+  coverSearchLock = false;
+}
+
+function applyCover(url, artist, album) {
+  npCover.src = url;
+  npArtist.textContent = artist ? `${artist}${album ? ' • ' + album : ''}` : '';
+  updateArtwork(url, npText.textContent, artist);
+  if(history.length > 0 && history[0].title === npText.textContent) {
+      history[0].cover = url;
+      saveHistory();
+      renderHistory();
+  }
+}
+
+function queryItunes(term) {
+  return new Promise((resolve) => {
+    const cbName = '__it_cb_' + Date.now();
+    const timeout = setTimeout(() => { cleanup(); resolve(null); }, 5000);
+    
+    window[cbName] = (data) => {
+      clearTimeout(timeout);
+      cleanup();
+      const res = data?.results?.[0];
+      if (res && res.artworkUrl100) {
+        resolve({
+          cover: res.artworkUrl100.replace('100x100', '300x300'),
+          artist: res.artistName,
+          album: res.collectionName
+        });
+      } else {
+        resolve(null);
+      }
+    };
+
+    const script = document.createElement('script');
+    script.src = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&media=music&entity=song&limit=1&callback=${cbName}`;
+    script.onerror = () => { clearTimeout(timeout); cleanup(); resolve(null); };
+    document.head.appendChild(script);
+
+    function cleanup() {
+      delete window[cbName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+    }
+  });
+}
+
+/* ---------- WHATSAPP INTELIGENTE ---------- */
+function updateWhatsAppLink(currentSong) {
+  const waBtn = $('wa-link-main');
+  if (!waBtn) return;
+
+  let message = `Hola DJ Salvaje 🎵 Quiero dedicar una canción en ${STATION_NAME}.`;
+  
+  if (currentSong && currentSong !== NP_FALLBACK && currentSong !== "—") {
+     message += `\n\nJusto suena algo bueno: "${currentSong}". ¿Pueden poner más así? 😉`;
+  } else {
+     message += "\n\nLes escucho desde mi celular 📱 ¡Saludos!";
+  }
+  
+  message += `\n\n${SOCIAL_HASHTAGS}`; 
+  
+  const encodedMsg = encodeURIComponent(message);
+  waBtn.href = `https://wa.me/${MY_PHONE_NUMBER}?text=${encodedMsg}`;
+}
+updateWhatsAppLink(null);
+
+/* ---------- Historial ---------- */
+function pushHistory(title,artist,cover){history.unshift({title,artist:artist||'',cover:cover||'la_joya_icon_192.png',ts:Date.now()});history=history.filter((h,i)=>i===0||h.title!==history[i-1].title).slice(0,40);saveHistory();renderHistory();}
+function saveHistory(){localStorage.setItem('lajoya_hist',JSON.stringify(history));}
+function clearHistory(){history=[];lastTitle='';saveHistory();renderHistory();showToast('Historial limpiado');}
+function renderHistory(){const ul=$('history-list');ul.innerHTML='';$('history-empty').style.display=history.length?'none':'block';history.forEach(h=>{const d=document.createElement('div');d.className='hist-item';d.innerHTML=`<img src="${h.cover||'la_joya_icon_192.png'}" alt=""><div class="min-w-0 flex-1"><p class="text-sm text-white/85 truncate">${escapeHtml(h.title)}</p><p class="text-[10px] text-white/40 truncate">${escapeHtml(h.artist||'')}</p></div><span class="text-[9px] text-white/25 flex-none">${timeAgo(h.ts)}</span>`;ul.appendChild(d);});}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function timeAgo(ts){const s=(Date.now()-ts)/1000;if(s<60)return 'ahora';if(s<3600)return Math.floor(s/60)+' min';if(s<86400)return Math.floor(s/3600)+' h';return Math.floor(s/86400)+' d';}
+
+/* ---------- Compartir ---------- */
+function shareTrack(){
+  const t=(npText.textContent&&npText.textContent!=='—'&&npText.textContent!==NP_FALLBACK)?npText.textContent:null;
+  const base=t?`🎵 Ahora suena en ${STATION_NAME}: ${t}\n\nEscúchanos en vivo 👉 ${location.href}`:`📻 Escucha ${STATION_NAME} en vivo 👉 ${location.href}`;
+  const msg=base+`\n\n${SOCIAL_HASHTAGS}`;
+  window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+}
+function shareApp(){
+  const url=location.href;
+  const msg=`🎧 ${STATION_NAME} en vivo\n\n${url}\n\n${SOCIAL_HASHTAGS}`;
+  if(navigator.share){navigator.share({title:STATION_NAME,text:msg,url}).catch(()=>{});}
+  else{(navigator.clipboard?navigator.clipboard.writeText(msg):Promise.reject()).catch(()=>{const t=document.createElement('textarea');t.value=msg;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();}).finally(()=>showToast('¡Copiado con hashtags!'));}
+}
+function showToast(m){const t=$('toast');t.innerText=m;t.classList.remove('translate-y-32','opacity-0');setTimeout(()=>t.classList.add('translate-y-32','opacity-0'),3000);}
+
+/* ---------- Sheets Management ---------- */
+function openSheet(k){closeSheets();$('sheet-'+k).classList.add('open');if(k==='history')renderHistory();}
+function closeSheets(){document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('open'));}
+
+/* ---------- Ahorro Datos ---------- */
+function toggleDataSave(){dataSave=!dataSave;dsSwitch.classList.toggle('on',dataSave);localStorage.setItem('lajoya_ds',dataSave?'1':'0');if(userWantsPlay){stopNP();startNP();}showToast(dataSave?'Ahorro de datos ON':'Ahorro de datos OFF');}
+(function initDS(){dsSwitch.classList.toggle('on',dataSave);})();
+document.addEventListener('visibilitychange',()=>{if(dataSave&&document.hidden&&userWantsPlay&&!audio.paused){audio.pause();}}); 
+
+/* ---------- MediaSession ---------- */
+function updateMS(p){if('mediaSession'in navigator){try{navigator.mediaSession.playbackState=p?'playing':'paused';}catch(_){}}}
+function updateArtwork(cover,title,artist){if('mediaSession'in navigator){try{navigator.mediaSession.metadata=new MediaMetadata({title:title||STATION_NAME,artist:artist||'Dj Salvaje presenta',album:'Radio en vivo',artwork:[{src:cover,sizes:'300x300',type:'image/jpeg'},{src:'la_joya_icon_192.png',sizes:'192x192',type:'image/png'}]});}catch(_){}}}
+if('mediaSession'in navigator){try{navigator.mediaSession.metadata=new MediaMetadata({title:STATION_NAME,artist:'Dj Salvaje presenta',album:'Radio en vivo',artwork:[{src:'la_joya_icon_192.png',sizes:'192x192',type:'image/png'},{src:'la_joya_icon.png',sizes:'512x512',type:'image/png'}]});navigator.mediaSession.setActionHandler('play',()=>togglePlay());navigator.mediaSession.setActionHandler('pause',()=>togglePlay());navigator.mediaSession.setActionHandler('stop',()=>{if(userWantsPlay)togglePlay();});}catch(_){}}
+
+/* ---------- SW Registration ---------- */
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW',e)));
+
+/* ---------- INSTALL PROMPT LÓGICA ---------- */
+window.addEventListener('beforeinstallprompt',(e)=>{
+  e.preventDefault();
+  deferredPrompt=e;
+  setTimeout(()=>{
+    if(deferredPrompt && !localStorage.getItem('lajoya_installed_dismissed')){
+      $('install-prompt').classList.add('show');
+    }
+  }, CONFIG.SHOW_INSTALL_PROMPT_AFTER_S * 1000);
+});
+function triggerInstall(){
+  if(!deferredPrompt)return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then((choiceResult)=>{
+    if(choiceResult.outcome==='accepted'){
+      localStorage.setItem('lajoya_installed_dismissed','1');
+      showToast('¡Gracias por instalar La Joya! 🌟');
+    }
+    deferredPrompt=null;
+    dismissInstallPrompt();
+  });
+}
+function dismissInstallPrompt(){
+  $('install-prompt').classList.remove('show');
+  localStorage.setItem('lajoya_installed_dismissed','1');
+}
+if(window.matchMedia('(display-mode: standalone)').matches || navigator.standalone){
+  localStorage.setItem('lajoya_installed_dismissed','1');
+}
+
+/* ---------- Boot Sequence ---------- */
+(function boot(){const sv=localStorage.getItem('lajoya_viz');vizMode=(sv==='decorativo'||CONFIG.VISUALIZER_MODE==='decorativo')?'decorativo':'real';applyVizIcon();refreshEqUI();renderHistory();if(localStorage.getItem('lajoya_wanted')==='1')setStatus('Toca ▶ para continuar',false);})();
+</script>
+</body>
+</html>
